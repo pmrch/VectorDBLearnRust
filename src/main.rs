@@ -5,16 +5,19 @@ pub mod store;
 pub mod summary;
 pub mod utils;
 
+use std::collections::{HashMap};
 use std::io::Write;
 use std::sync::atomic::{ AtomicBool, Ordering };
 use std::sync::Arc;
 
 use dotenv::dotenv;
 use log::{self, info};
+use openai_api_rust::embeddings::EmbeddingData;
 use openai_api_rust::{Message, Role};
 
 use crate::custom_types::{ MyChatbot };
-use crate::utils::{ init_logger, text_to_vec, load_sysprompt };
+use crate::utils::{ init_logger, /*text_to_vec*/ load_sysprompt };
+use crate::store::add_memory;
 
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -33,6 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => println!("AN ERROR PREVENTED LOG INITIALIZATION: {e}")
     }
 
+    let cb = MyChatbot::new();
     let system_prompt = load_sysprompt();
     let mut messages: Vec<Message> = vec![
         Message {
@@ -50,9 +54,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     ];
-
-    let cb = MyChatbot::new();
     let mut input: String = String::new();
+    let mut memories: HashMap<String, EmbeddingData> = HashMap::new();
+    let mut count: usize = 0;
 
     // Start of chatbot operations
     while running.load(Ordering::SeqCst) {
@@ -75,15 +79,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     content: input.to_string()
                 }
             );
+            add_memory(&input, &mut memories, &mut count);
         }
         
         let resp: (String, Option<u32>, Option<u32>) = cb.clone().generate_response(&mut messages.clone());
         println!("{:#?}", resp.0);
         
-        for item in text_to_vec(&input) {
+        /*for item in text_to_vec(&input) {
             println!("{}", item);
             std::io::stdout().flush().unwrap();
-        }
+        }*/
     }
 
     Ok(())
