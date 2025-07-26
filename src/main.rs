@@ -12,11 +12,10 @@ use std::sync::Arc;
 
 use dotenv::dotenv;
 use log::{self, info};
-use openai_api_rust::embeddings::EmbeddingData;
-use openai_api_rust::{Message, Role};
+use openai_api_rust::{Message, OpenAI, Role};
 
 use crate::custom_types::{ MyChatbot };
-use crate::utils::{ init_logger, /*text_to_vec*/ load_sysprompt };
+use crate::utils::{ get_openai, init_logger, load_environment, load_sysprompt };
 use crate::store::add_memory;
 
 
@@ -35,6 +34,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(_) => (),
         Err(e) => println!("AN ERROR PREVENTED LOG INITIALIZATION: {e}")
     }
+
+    let url = load_environment("URL");
+    let api_key = load_environment("LMS_API_KEY");
+    let oai: OpenAI = get_openai(&url, &api_key);
 
     let cb = MyChatbot::new();
     let system_prompt = load_sysprompt();
@@ -55,7 +58,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     ];
     let mut input: String = String::new();
-    let mut memories: HashMap<String, EmbeddingData> = HashMap::new();
+    let mut memories: HashMap<String, Vec<f64>> = HashMap::new();
+    let mut memories_text: HashMap<String, String> = HashMap::new();
     let mut count: usize = 0;
 
     // Start of chatbot operations
@@ -79,16 +83,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     content: input.to_string()
                 }
             );
-            add_memory(&input, &mut memories, &mut count);
+            add_memory(&input, &mut memories, &mut count, &mut memories_text);
         }
         
-        let resp: (String, Option<u32>, Option<u32>) = cb.clone().generate_response(&mut messages.clone());
-        println!("{:#?}", resp.0);
+        let resp: (String, Option<u32>, Option<u32>) = cb.clone().generate_response(&mut messages.clone(), &oai);
+        messages.push(
+            Message { 
+                role: Role::Assistant, 
+                content: resp.0 
+            }
+        );
+        println!("{:#?}", messages);
         
         /*for item in text_to_vec(&input) {
             println!("{}", item);
             std::io::stdout().flush().unwrap();
         }*/
+        println!("Length of messages: {}", messages.len());
+        println!("Length of memories: {}", memories.len());
     }
 
     Ok(())

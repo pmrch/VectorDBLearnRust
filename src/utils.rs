@@ -8,7 +8,7 @@ use crate::custom_types::MyLogger;
 
 //static SPLIT_PAT1: &str = r"^[A-Z].*[.?!]$";
 static LOGGER: MyLogger = MyLogger;
-pub static EMBED_MODEL: &str = "all-minilm-l6-v2";
+pub static EMBED_MODEL: &str = "text-embedding-all-minilm-l6-v2-embedding";
 pub static CHAT_MODEL: &str = "meta-llama-3.1-8b-instruct@q4_k_m";
 
 fn read_abbreviations() -> Vec<String> {
@@ -58,13 +58,12 @@ fn split_to_sentences(input: &str) -> Vec<String> {
             if *i + 1 < len {
                 let next_word = spaced[*i + 1].1;
                 let next_w_chars: Vec<char> = next_word.chars().collect();
-
-                if next_w_chars.len() > 0 && (next_w_chars[0].is_uppercase() && next_w_chars[1].is_lowercase()) {
-                    result.push(buffer.trim_end().to_string());
-                    buffer.clear();
-                } else {
-                    result.push(buffer.trim_end().to_string());
-                    buffer.clear();
+                
+                if let Some(first) = next_w_chars.get(0) {
+                    if first.is_uppercase() {
+                        result.push(buffer.trim_end().to_string());
+                        buffer.clear();
+                    }
                 }
             }
         }

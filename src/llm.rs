@@ -5,7 +5,7 @@ use openai_api_rust::*;
 use openai_api_rust::chat::*;
 
 use crate::custom_types::{ MyChatBody, MyChatbot };
-use crate::utils::{ load_environment, get_openai, CHAT_MODEL };
+use crate::utils::{ CHAT_MODEL };
 
 static MY_ZERO: Option<u32> = Some(0);
 static MY_STR: &str = "";
@@ -16,15 +16,8 @@ impl MyChatbot {
         MyChatbot
     }
 
-    pub fn generate_response(self, messages: &mut Vec<Message>) -> (String, Option<u32>, Option<u32>) {
-        let url = load_environment("URL");
-        let api_key = load_environment("LMS_API_KEY");
-
-        info!("Variable 'url' length: {}", url.len());
-        info!("Variable 'api_key' length: {}", api_key.len());
-
-        let openai = get_openai(&url, &api_key);
-
+    pub fn generate_response(self, messages: &mut Vec<Message>, openai: &OpenAI) -> (String, Option<u32>, Option<u32>) {
+        let oai = openai.clone();
         let max_tokens: i32 = 512;
         let temperature: f32 = 0.3;
 
@@ -35,7 +28,7 @@ impl MyChatbot {
         info!("Created ChatBody");
             
         info!("Trying to get result");
-        let result = match openai.chat_completion_create(&body) {
+        let result = match oai.chat_completion_create(&body) {
             Ok(res) => {
                 info!("Completion successfully generate");
                 res

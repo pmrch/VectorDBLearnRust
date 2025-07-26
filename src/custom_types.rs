@@ -1,20 +1,9 @@
 use log::{self, Level, Metadata, Record};
 
-use openai_api_rust::embeddings::{ EmbeddingsBody, EmbeddingData };
-use openai_api_rust::Usage;
+use openai_api_rust::embeddings::{ EmbeddingsBody };
 use openai_api_rust::chat::ChatBody;
 use openai_api_rust::Message;
 
-
-
-
-#[derive(Clone)]
-pub struct MyEmbeddings {
-	pub object: Option<String>,
-	pub data: Option<Vec<EmbeddingData>>,
-	pub model: String,
-	pub usage: Usage,
-}
 
 // Here we predefine the MyChatbot struct, and implement
 // methods elsewhere
