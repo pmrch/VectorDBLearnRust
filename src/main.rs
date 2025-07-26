@@ -14,9 +14,8 @@ use dotenv::dotenv;
 use log::{self, info};
 use openai_api_rust::{Message, OpenAI, Role};
 
-use crate::custom_types::{ MyChatbot };
 use crate::utils::{ get_openai, init_logger, load_environment, load_sysprompt };
-use crate::store::add_memory;
+//use crate::store::add_memory;
 
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -39,7 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let api_key = load_environment("LMS_API_KEY");
     let oai: OpenAI = get_openai(&url, &api_key);
 
-    let cb = MyChatbot::new();
+    /*let cb = MyChatbot::new();
     let system_prompt = load_sysprompt();
     let mut messages: Vec<Message> = vec![
         Message {
@@ -101,7 +100,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }*/
         println!("Length of messages: {}", messages.len());
         println!("Length of memories: {}", memories.len());
-    }
+    }*/
 
     Ok(())
     // End of Chatbot operations

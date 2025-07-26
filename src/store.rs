@@ -5,11 +5,11 @@ use log::*;
 use ndarray::{Array1};
 use openai_api_rust::embeddings::{*};
 
-use crate::memory::{cosine_similarity, generate_embeddings};
+//use crate::memory::{cosine_similarity, generate_embeddings};
 use crate::utils::text_to_vec;
 
 
-pub fn add_memory(input: &str, memories: &mut HashMap<String, Vec<f64>>, count: &mut usize, memories_text: &mut HashMap<String, String>) -> () {
+/*pub fn add_memory(input: &str, memories: &mut HashMap<String, Vec<f64>>, count: &mut usize, memories_text: &mut HashMap<String, String>) -> () {
     let input_vectors: Vec<String> = text_to_vec(input);
     info!("Converted input to vector of {} tokens", input_vectors.len());
 
@@ -117,4 +117,4 @@ pub fn retrieve_memory(memories: HashMap<String, Vec<f64>>, memories_text: HashM
 
     if result.is_empty() { None }
     else { Some(result) }
-}
+}*/

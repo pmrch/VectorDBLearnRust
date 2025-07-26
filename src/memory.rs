@@ -1,11 +1,7 @@
-use openai_api_rust::embeddings::{Embeddings, EmbeddingsApi};
-use openai_api_rust::OpenAI;
-
 use ndarray::{self, Array1, ArrayD, Axis};
 use ndarray_linalg::{self, Norm};
 
 use crate::utils::{ load_environment, get_openai, EMBED_MODEL };
-use crate::custom_types::MyEmbeddingBody;
 
 
 pub fn make_vector(input: &ArrayD<f64>) -> Option<Array1<f64>> {
@@ -34,23 +30,6 @@ pub fn cosine_similarity(a: &Array1<f64>, b: &Array1<f64>) -> f64 {
     }
 }
 
-pub fn generate_embeddings(input: Vec<String>) -> Option<Embeddings> {
-    let oai: OpenAI = get_openai(&load_environment("URL"), &load_environment("LMS_API_KEY"));
-    let model = EMBED_MODEL;
-
-    let body = MyEmbeddingBody::new(model, input);
-    let emb = oai.embeddings_create(&body);
+pub fn generate_embeddings() {
     
-    let result: Option<Embeddings> = match emb {
-        Ok(emb) => {
-            Some(emb)
-        }
-        Err(e) => {
-            log::error!("Couldn't get embedding from text due to error: {e}");
-            log::error!("Returning None for result...");
-            None
-        }
-    };
-
-    return result;
 }

@@ -1,15 +1,18 @@
 use std::{env, fs, io::{ErrorKind, Read}, vec};
 use log::*;
 use std::path::Path;
-//use regex::*;
 use openai_api_rust::{Auth, OpenAI};
 
 use crate::custom_types::MyLogger;
 
-//static SPLIT_PAT1: &str = r"^[A-Z].*[.?!]$";
 static LOGGER: MyLogger = MyLogger;
-pub static EMBED_MODEL: &str = "text-embedding-all-minilm-l6-v2-embedding";
-pub static CHAT_MODEL: &str = "meta-llama-3.1-8b-instruct@q4_k_m";
+
+pub const PORT: &str = "1234";
+pub const EMBED_MODEL: &str = "text-embedding-all-minilm-l6-v2-embedding";
+
+pub const CHAT_MODEL: &str = "meta-llama-3.1-8b-instruct@q4_k_m";
+pub const TEMPERATURE: f32 = 0.6;
+pub const MAX_TOKENS: i32 = 4096;
 
 fn read_abbreviations() -> Vec<String> {
     let mut result: Vec<String> = vec![];

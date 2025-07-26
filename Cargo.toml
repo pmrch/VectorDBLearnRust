@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+macron = { version = "*", features = ["full"] }
 openai_api_rust = "0.1.9"
 dotenv = "0.15"
 tokio = { version = "1.46.1", features = ["full"] }
@@ -14,3 +15,5 @@ ndarray = "*"
 ndarray-linalg = "*"
 regex = "*"
 ctrlc = "*"
+lm-studio-api = "*"
+anyhow = "*"
