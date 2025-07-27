@@ -3,15 +3,24 @@ use std::usize;
 use log::*;
 
 use ndarray::{Array1};
-use openai_api_rust::embeddings::{*};
+use lm_studio_api_extended::*;
 
-//use crate::memory::{cosine_similarity, generate_embeddings};
+use crate::memory::{cosine_similarity, generate_embeddings};
 use crate::utils::text_to_vec;
 
 
-/*pub fn add_memory(input: &str, memories: &mut HashMap<String, Vec<f64>>, count: &mut usize, memories_text: &mut HashMap<String, String>) -> () {
+/*pub fn add_memory(input: &str, memories: &mut HashMap<String, Vec<f64>>, count: &mut usize, memories_text: &mut HashMap<String, String>, embedder: Embedding) -> () {
     let input_vectors: Vec<String> = text_to_vec(input);
     info!("Converted input to vector of {} tokens", input_vectors.len());
+
+    let mut embeddings: Vec<f32> = Vec::new();
+
+    for sentence in input_vectors {
+        let embedding_request = EmbeddingRequest {
+
+        }
+        let embedding = embedder.embed(req)
+    }
 
     let my_embeddings: Option<Embeddings> = generate_embeddings(input_vectors.clone());
     let Some(emb) = my_embeddings else { 

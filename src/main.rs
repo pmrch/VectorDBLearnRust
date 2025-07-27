@@ -5,103 +5,20 @@ pub mod store;
 pub mod summary;
 pub mod utils;
 
-use std::collections::{HashMap};
-use std::io::Write;
-use std::sync::atomic::{ AtomicBool, Ordering };
-use std::sync::Arc;
 
-use dotenv::dotenv;
-use log::{self, info};
-use openai_api_rust::{Message, OpenAI, Role};
-
-use crate::utils::{ get_openai, init_logger, load_environment, load_sysprompt };
-//use crate::store::add_memory;
+use lm_studio_api_extended::embedding::*;
 
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let running = Arc::new(AtomicBool::new(true));
-    let r = running.clone();
+#[tokio::main]
+async fn main() {
+    let mut embedder = Embedding::new(Some("http://10.7.0.10:1234/v1/embeddings".to_string())); // Uses default localhost:1234
+    let req = EmbeddingRequest {
+        model: EmbeddingModel::AllMiniLmL6,
+        input: vec!["Rust is magic.".to_string()],
+        encoding_format: Some("float".to_string()),
+    };
 
-    ctrlc::set_handler(move || {
-        log::error!("\nReceived Ctrl+C, exiting...");
-        r.store(false, Ordering::SeqCst);
-        std::process::exit(1);
-    }).expect("Error setting Ctrl+C handler");
-
-    dotenv().ok();
-    match init_logger() {
-        Ok(_) => (),
-        Err(e) => println!("AN ERROR PREVENTED LOG INITIALIZATION: {e}")
-    }
-
-    let url = load_environment("URL");
-    let api_key = load_environment("LMS_API_KEY");
-    let oai: OpenAI = get_openai(&url, &api_key);
-
-    /*let cb = MyChatbot::new();
-    let system_prompt = load_sysprompt();
-    let mut messages: Vec<Message> = vec![
-        Message {
-            role: Role::System,
-            content: match system_prompt {
-                Ok(p) if !p.is_empty() => p,
-                Ok(_) => {
-                    info!("System prompt was successfully loaded, but empty");
-                    "".to_string()
-                }
-                Err(_) => {
-                    log::warn!("System Prompt was empty, resuming with an empty one");
-                    "".to_string()
-                }
-            }
-        }
-    ];
-    let mut input: String = String::new();
-    let mut memories: HashMap<String, Vec<f64>> = HashMap::new();
-    let mut memories_text: HashMap<String, String> = HashMap::new();
-    let mut count: usize = 0;
-
-    // Start of chatbot operations
-    while running.load(Ordering::SeqCst) {
-        print!("Enter your message here: ");
-        let _ = std::io::stdout().flush();
-
-        match std::io::stdin().read_line(&mut input) {
-            Ok(_) => {
-                log::info!("Line read was successful");
-            }
-            Err(e) => {
-                log::error!("Failed to read line due to error: {e}")
-            }
-        }
-
-        if !input.is_empty() {
-            messages.push(
-                Message { 
-                    role: Role::User, 
-                    content: input.to_string()
-                }
-            );
-            add_memory(&input, &mut memories, &mut count, &mut memories_text);
-        }
-        
-        let resp: (String, Option<u32>, Option<u32>) = cb.clone().generate_response(&mut messages.clone(), &oai);
-        messages.push(
-            Message { 
-                role: Role::Assistant, 
-                content: resp.0 
-            }
-        );
-        println!("{:#?}", messages);
-        
-        /*for item in text_to_vec(&input) {
-            println!("{}", item);
-            std::io::stdout().flush().unwrap();
-        }*/
-        println!("Length of messages: {}", messages.len());
-        println!("Length of memories: {}", memories.len());
-    }*/
-
-    Ok(())
-    // End of Chatbot operations
+    let res = embedder.embed(req).await.unwrap();
+    println!("Embedding: {:?}", res);
+    println!("Length of embedding: {:#?}", res.to_vec().len());
 }

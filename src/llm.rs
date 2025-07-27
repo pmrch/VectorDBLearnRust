@@ -1,11 +1,11 @@
 use log::*;
-use lm_studio_api::*;
+use lm_studio_api_extended::*;
 
-use crate::utils::{ CHAT_MODEL, PORT, TEMPERATURE, MAX_TOKENS };
+use crate::utils::{ PORT, TEMPERATURE, MAX_TOKENS };
 
 
 pub async fn generate_response(context: Context) -> Result<Response> {
-    let model = Model::Custom(CHAT_MODEL.to_string());
+    let model = Model::Llama3_1_8b;
     
     let mut chat: Chat = Chat::new(
         model.clone(), 

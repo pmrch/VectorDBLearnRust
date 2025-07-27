@@ -10,7 +10,6 @@ static LOGGER: MyLogger = MyLogger;
 pub const PORT: &str = "1234";
 pub const EMBED_MODEL: &str = "text-embedding-all-minilm-l6-v2-embedding";
 
-pub const CHAT_MODEL: &str = "meta-llama-3.1-8b-instruct@q4_k_m";
 pub const TEMPERATURE: f32 = 0.6;
 pub const MAX_TOKENS: i32 = 4096;
 
