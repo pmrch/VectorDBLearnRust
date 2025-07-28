@@ -957,8 +957,6 @@ checksum = "241eaef5fd12c88705a01fc1066c48c4b36e0dd4377dcdc7ec3942cea7a69956"
 [[package]]
 name = "lm-studio-api-extended"
 version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4e7e55d0f2ef491d5b8331e75c041eb9b8233f487b3aeebead3c0676ce78ddd"
 dependencies = [
  "anyhow",
  "futures",

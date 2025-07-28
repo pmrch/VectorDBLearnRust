@@ -168,5 +168,5 @@ pub fn get_openai(url: &str, a_key: &str) -> OpenAI {
 
 pub fn text_to_vec(input: &str) -> Vec<String>{
     let sentences = split_to_sentences(input);
-    sentences
+    sentences.clone()
 }

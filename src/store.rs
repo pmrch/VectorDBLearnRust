@@ -1,94 +1,71 @@
 use std::collections::HashMap;
-use std::usize;
+use std::{usize};
+use anyhow::Ok;
+use lm_studio_api_extended::embedding::embedding::EmbeddingResult;
 use log::*;
 
-use ndarray::{Array1};
-use lm_studio_api_extended::*;
+use ndarray::{ Array1, Array2, ShapeBuilder };
+use lm_studio_api_extended::embedding::*;
 
-use crate::memory::{cosine_similarity, generate_embeddings};
-use crate::utils::text_to_vec;
+use crate::memory_tools::{cosine_similarity, make_vector, vec_to_array2};
+use crate::utils::{text_to_vec, EMBED_MODEL};
 
 
-/*pub fn add_memory(input: &str, memories: &mut HashMap<String, Vec<f64>>, count: &mut usize, memories_text: &mut HashMap<String, String>, embedder: Embedding) -> () {
+pub async fn add_memory(input: &str, memories: &mut HashMap<String, Vec<f32>>, memories_text: &mut HashMap<String, String>, count: &mut usize, embedder: &mut Embedding) -> anyhow::Result<()> {
     let input_vectors: Vec<String> = text_to_vec(input);
     info!("Converted input to vector of {} tokens", input_vectors.len());
 
-    let mut embeddings: Vec<f32> = Vec::new();
+    let req = EmbeddingRequest {
+        model: EmbeddingModel::AllMiniLmL6,
+        input: input_vectors.clone(),
+        encoding_format: Some("float".to_string()),
+    };
 
-    for sentence in input_vectors {
-        let embedding_request = EmbeddingRequest {
+    let response = embedder.embed(req).await?;
 
+    match response {
+        EmbeddingResult::Single(vec) => {
+            let key: String = format!("User_Info_{}", *count);
+            memories.insert(key.clone(), vec);
+            memories_text.insert(key, input_vectors[0].clone());
         }
-        let embedding = embedder.embed(req)
+        EmbeddingResult::Multi(vvec) => {
+            for (i, emb) in vvec.iter().enumerate() {
+                let key: String = format!("User_Info_{}", *count + i);
+                memories.insert(key.clone(), emb.clone());
+                memories_text.insert(key, input_vectors[i].clone());
+            }
+            *count += vvec.len();
+        }
     }
 
-    let my_embeddings: Option<Embeddings> = generate_embeddings(input_vectors.clone());
-    let Some(emb) = my_embeddings else { 
-        error!("Failed to generate embeddings from input text.");
-        return 
-    };
-
-    let Some(data_vec) = emb.data else { 
-        error!("Embeddings returned, but no data found inside.");
-        return 
-    };
-
-    if data_vec.is_empty() {
-        warn!("Embedding data was empty. Nothing to add to memory.");
-        return;
-    }
-
-    for (i, val) in data_vec.iter().enumerate() {
-        let Some(data) = val.embedding.as_ref() else { 
-            warn!("Missing embedding vector at index {}, skipping.", i);
-            continue 
-        };
-
-        let key = format!("User Info{}", *count + i);
-
-        memories.insert(key.to_string(), data.to_vec());
-        info!("Added memory at key '{}', vector length {}", key, data.len());
-
-        memories_text.insert(key.to_string(), input.to_string());
-        info!("Added memory text at key '{}', string length {}", key, input.to_string().len());
-    }
-
-    *count += data_vec.len();
-    info!("Updated memory count to {}", *count);
+    Ok(())
 }
 
-pub fn retrieve_memory(memories: HashMap<String, Vec<f64>>, memories_text: HashMap<String, String>, query: &str, top_k: usize) -> Option<Vec<String>> {
+pub async fn retrieve_memory(memories: HashMap<String, Vec<f32>>, memories_text: HashMap<String, String>, query: &str, top_k: usize, embedder: Embedding) -> anyhow::Result<Vec<String>> {
     // Here we convert our string input to a vector so that it's,
     // in the correct format for the OpanAI Rust API's embedding
     // call.
     let input_vector = text_to_vec(query);
+    let req = EmbeddingRequest {
+        model: EmbeddingModel::AllMiniLmL6,
+        input: input_vector,
+        encoding_format: Some("float".to_string())
+    };
+
+    let mut embedding_as_array1: Array1<f32> = Array1::from_vec(vec![]);
+    let mut embeddings_as_array2: Array2<f32> = Array2::zeros((0, 0));
+
+    let embeddings = embedder.embed(req).await?;
+    match embeddings {
+        EmbeddingResult::Single(vec) => {
+            embedding_as_array1 = Array1::from_vec(vec);
+        },
+        EmbeddingResult::Multi(vvec) => {
+            embeddings_as_array2 = vec_to_array2(vvec);
+        }
+    }
     
-    // This is an instance of the Embeddings struct that has 
-    // several attributes, one of which is data, the one we need.
-    let embeddings = generate_embeddings(input_vector.to_vec())?;
-
-    // This is a vector of struct EmbeddingsData, which has 
-    // several attributes, one of which is embedding, which is
-    // the value we need.
-    let embedding_data = embeddings.data?;
-
-    // This will store the extracted floating point values,
-    // creating a raw vector, the exact one we need.
-    let actual_embedding = embedding_data[0].embedding.as_ref()?;
-
-    // Here we convert our Vec to an Array so we can perform
-    // cosine similarity on it.
-    let actual_embed_as_array: Array1<f64> = Array1::from_vec(actual_embedding.to_vec());
-
-    // Here we define keys, to which we can later reference. these are the 
-    // keys of memory_text
-    let keys: Vec<&String> = memories_text.keys().collect();
-
-    // Here we create a Vec of a tuple which corresponds to the
-    // attributes of HashMap, and an extra, the similarity itslef
-    // (index of memory, similarity).
-    let mut sims_and_indexes: Vec<(usize, f64)> = Vec::new();
-
     // Here we create a Vector that will store the results.
     // To be more specific, we will put the correct values from memories_text
     let mut result: Vec<String> = Vec::new();
@@ -96,7 +73,9 @@ pub fn retrieve_memory(memories: HashMap<String, Vec<f64>>, memories_text: HashM
     // Here we loop through memories and calculate cosine similarity, and store
     // both the index and the similarity value in sims_and_indexes
     for (i, mem) in memories.iter().enumerate() {
-        let mem_vec_as_array: Array1<f64> = Array1::from_vec(mem.1.clone());
+        let mem_vec_as_array: Array1<f32> = Array1::from_vec(mem.1.clone());
+        let embeddings_as_array: Array1<f32> = make_vector(input);
+
         let similarity = cosine_similarity(&actual_embed_as_array, &mem_vec_as_array);
         sims_and_indexes.push((i, similarity));
     }
@@ -126,4 +105,6 @@ pub fn retrieve_memory(memories: HashMap<String, Vec<f64>>, memories_text: HashM
 
     if result.is_empty() { None }
     else { Some(result) }
-}*/
+
+    Ok(())
+}
