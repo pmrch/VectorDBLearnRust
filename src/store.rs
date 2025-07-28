@@ -1,14 +1,14 @@
 use std::collections::HashMap;
-use std::{usize};
+use std::{result, usize};
 use anyhow::Ok;
 use lm_studio_api_extended::embedding::embedding::EmbeddingResult;
 use log::*;
 
-use ndarray::{ Array1, Array2, ShapeBuilder };
+use ndarray::{ Array1, Array2 };
 use lm_studio_api_extended::embedding::*;
 
-use crate::memory_tools::{cosine_similarity, make_vector, vec_to_array2};
-use crate::utils::{text_to_vec, EMBED_MODEL};
+use crate::memory_tools::{cosine_similarity, get_similarities, make_vector};
+use crate::utils::{text_to_vec};
 
 
 pub async fn add_memory(input: &str, memories: &mut HashMap<String, Vec<f32>>, memories_text: &mut HashMap<String, String>, count: &mut usize, embedder: &mut Embedding) -> anyhow::Result<()> {
@@ -53,58 +53,29 @@ pub async fn retrieve_memory(memories: HashMap<String, Vec<f32>>, memories_text:
         encoding_format: Some("float".to_string())
     };
 
-    let mut embedding_as_array1: Array1<f32> = Array1::from_vec(vec![]);
-    let mut embeddings_as_array2: Array2<f32> = Array2::zeros((0, 0));
-
     let embeddings = embedder.embed(req).await?;
+    let mut similarity: Vec<(String, f32)> = Vec::new();
+    let mut similarities: Vec<Vec<(String, f32)>> = Vec::new();
+
     match embeddings {
         EmbeddingResult::Single(vec) => {
-            embedding_as_array1 = Array1::from_vec(vec);
+            similarity = get_similarities(&vec, &memories, top_k);
         },
         EmbeddingResult::Multi(vvec) => {
-            embeddings_as_array2 = vec_to_array2(vvec);
+            for vec in vvec {
+                let sim: Vec<(String, f32)> = get_similarities(&vec, &memories, top_k);
+                similarities.push(sim);
+            }
         }
-    }
-    
-    // Here we create a Vector that will store the results.
-    // To be more specific, we will put the correct values from memories_text
+    };
+
     let mut result: Vec<String> = Vec::new();
-
-    // Here we loop through memories and calculate cosine similarity, and store
-    // both the index and the similarity value in sims_and_indexes
-    for (i, mem) in memories.iter().enumerate() {
-        let mem_vec_as_array: Array1<f32> = Array1::from_vec(mem.1.clone());
-        let embeddings_as_array: Array1<f32> = make_vector(input);
-
-        let similarity = cosine_similarity(&actual_embed_as_array, &mem_vec_as_array);
-        sims_and_indexes.push((i, similarity));
-    }
-
-    // Here we filter out NaN values, since sort_by() doesn't play nice
-    // with NaN comparisons
-    sims_and_indexes.retain(|x| !x.1.is_nan());
-    sims_and_indexes.sort_by(
-        |a, b| b.1.partial_cmp(&a.1).unwrap()
-    );
-
-    if sims_and_indexes.len() >= top_k {
-        for item in 0..top_k {
-            let index = sims_and_indexes[item].0;
-            let val= memories_text[keys[index]].clone();
-
-            result.push(val);
-        }
-    } else {
-        for item in sims_and_indexes {
-            let index = item.0;
-            let val = memories_text[keys[index]].clone();
-
-            result.push(val);
+    if similarity.is_empty() {
+        for sim in similarities {
+            for s in sim {
+                result.push(value);
+            }
         }
     }
-
-    if result.is_empty() { None }
-    else { Some(result) }
-
     Ok(())
 }

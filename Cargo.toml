@@ -15,7 +15,7 @@ ndarray = "*"
 ndarray-linalg = "*"
 regex = "*"
 ctrlc = "*"
-lm-studio-api-extended = { path = "/mnt/d/code/Rust/rs-lm-studio-api" }
+lm-studio-api-extended = { path = "../rs-lm-studio-api-extended" }
 anyhow = "*"
 reqwest = "*"
 serde = "*"
