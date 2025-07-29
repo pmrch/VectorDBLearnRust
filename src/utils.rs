@@ -1,17 +1,17 @@
 use std::{env, fs, io::{ErrorKind, Read}, vec};
+use lm_studio_api_extended::EmbeddingModel;
 use log::*;
 use std::path::Path;
-use openai_api_rust::{Auth, OpenAI};
 
 use crate::custom_types::MyLogger;
 
 static LOGGER: MyLogger = MyLogger;
 
 pub const PORT: &str = "1234";
-pub const EMBED_MODEL: &str = "text-embedding-all-minilm-l6-v2-embedding";
 
 pub const TEMPERATURE: f32 = 0.6;
 pub const MAX_TOKENS: i32 = 4096;
+pub const EMBED_MODEL: EmbeddingModel = EmbeddingModel::AllMiniLmL6;
 
 fn read_abbreviations() -> Vec<String> {
     let mut result: Vec<String> = vec![];
@@ -154,16 +154,6 @@ pub fn init_logger() -> Result<(), SetLoggerError> {
     log::set_max_level(LevelFilter::Debug);
 
     Ok(())
-}
-
-pub fn get_openai(url: &str, a_key: &str) -> OpenAI {
-    let auth = Auth{
-        api_key: a_key.to_string(),
-        organization: None
-    };
-    let oai = OpenAI::new(auth, url);
-
-    oai
 }
 
 pub fn text_to_vec(input: &str) -> Vec<String>{
